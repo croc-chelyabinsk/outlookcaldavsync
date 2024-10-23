@@ -39,6 +39,7 @@ namespace CalDavSynchronizer.Implementation.Common
         private const string PR_LONG_TERM_ENTRYID_FROM_TABLE = "http://schemas.microsoft.com/mapi/proptag/0x66700102";
         private const string PR_ENTRYID = "http://schemas.microsoft.com/mapi/proptag/0x0FFF0102";
         private const string LastModificationTimeColumnId = "LastModificationTime";
+        private const string UserModificationTimeColumnId = "UserModifiedTime";
         private const string SubjectColumnId = "Subject";
         private const string StartColumnId = "Start";
         private const string EndColumnId = "End";
@@ -65,7 +66,7 @@ namespace CalDavSynchronizer.Implementation.Common
                 table.Columns.Add(SubjectColumnId);
                 table.Columns.Add(StartColumnId);
                 table.Columns.Add(EndColumnId);
-
+                table.Columns.Add(UserModificationTimeColumnId);
                 while (!table.EndOfTable)
                 {
                     var row = table.GetNextRow();
@@ -101,10 +102,14 @@ namespace CalDavSynchronizer.Implementation.Common
                     var appointmentId = new AppointmentId(entryId, globalAppointmentId);
 
                     var lastModificationTimeObject = row[LastModificationTimeColumnId];
+                    var userModificationTimeObject = row[UserModificationTimeColumnId];
                     DateTime lastModificationTime;
                     if (lastModificationTimeObject != null)
                     {
-                        lastModificationTime = ((DateTime) lastModificationTimeObject).ToUniversalTime();
+                        lastModificationTime = ((DateTime) lastModificationTimeObject);
+                        if (userModificationTimeObject is DateTime userModificationTime && userModificationTime > lastModificationTime)
+                            lastModificationTime = userModificationTime;
+                        lastModificationTime.ToUniversalTime();
                     }
                     else
                     {
