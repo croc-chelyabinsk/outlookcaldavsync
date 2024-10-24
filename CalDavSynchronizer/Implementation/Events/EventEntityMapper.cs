@@ -667,6 +667,7 @@ namespace CalDavSynchronizer.Implementation.Events
                         email = CreateMailUriOrNull(organizerEmail, logger);
                     }
 
+                    //Добавление организатора участником, так как VK не воспринимает изменение списка участников по CalDAV, если список пуст
                     var ownAttendee = new Attendee();
                     ownAttendee.Value = new Uri(email);
                     ownAttendee.CommonName = source.Organizer;
@@ -1407,6 +1408,11 @@ namespace CalDavSynchronizer.Implementation.Events
             var organizerSet = false;
             var ownAttendeeSet = false;
 
+            if (source.MeetingStatus == OlMeetingStatus.olNonMeeting)
+            {
+                return organizerSet;
+            }
+
             foreach (var recipient in source.Recipients.ToSafeEnumerable<Recipient>())
             {
                 string recipientMailAddressOrNull = null;
@@ -1427,44 +1433,27 @@ namespace CalDavSynchronizer.Implementation.Events
                 }
 
                 var nameWithoutEmail = OutlookUtility.RemoveEmailFromName(recipient);
-                if (source.MeetingStatus != OlMeetingStatus.olNonMeeting)
+
+                if ((OlMeetingRecipientType) recipient.Type == OlMeetingRecipientType.olResource)
                 {
-                    if ((OlMeetingRecipientType) recipient.Type == OlMeetingRecipientType.olResource)
+                    var attendee = new Attendee();
+                    attendee.Type = "RESOURCE";
+                    attendee.ParticipationStatus = "ACCEPTED";
+                    attendee.CommonName = nameWithoutEmail;
+                    attendee.Role = "REQ-PARTICIPANT";
+
+                    var resourceUri = await _calendarResourceResolver.GetResourceUriOrNull(nameWithoutEmail);
+
+                    if (resourceUri != null)
                     {
-                        var attendee = new Attendee();
-                        attendee.Type = "RESOURCE";
-                        attendee.ParticipationStatus = "ACCEPTED";
-                        attendee.CommonName = nameWithoutEmail;
-                        attendee.Role = "REQ-PARTICIPANT";
-
-                        var resourceUri = await _calendarResourceResolver.GetResourceUriOrNull(nameWithoutEmail);
-
-                        if (resourceUri != null)
+                        attendee.Value = resourceUri;
+                        if (!string.IsNullOrEmpty(recipientMailAddressOrNull))
                         {
-                            attendee.Value = resourceUri;
-                            if (!string.IsNullOrEmpty(recipientMailAddressOrNull))
-                            {
-                                attendee.Parameters.Add("EMAIL", recipientMailAddressOrNull);
-                            }
+                            attendee.Parameters.Add("EMAIL", recipientMailAddressOrNull);
                         }
-                        else
-                        {
-                            if (!string.IsNullOrEmpty(recipient.Address))
-                            {
-                                var recipientMailUrl = CreateMailUriOrNull(recipientMailAddressOrNull ?? recipient.Address, logger);
-                                if (recipientMailUrl != null)
-                                {
-                                    attendee.Value = new Uri(recipientMailUrl);
-                                }
-                            }
-                        }
-
-                        target.Attendees.Add(attendee);
                     }
-                    else if (!IsOwnIdentity(recipientMailAddressOrNull))
+                    else
                     {
-                        var attendee = new Attendee();
-
                         if (!string.IsNullOrEmpty(recipient.Address))
                         {
                             var recipientMailUrl = CreateMailUriOrNull(recipientMailAddressOrNull ?? recipient.Address, logger);
@@ -1473,39 +1462,54 @@ namespace CalDavSynchronizer.Implementation.Events
                                 attendee.Value = new Uri(recipientMailUrl);
                             }
                         }
-
-                        attendee.ParticipationStatus = MapParticipation1To2(recipient.MeetingResponseStatus);
-                        attendee.CommonName = nameWithoutEmail;
-                        attendee.Role = MapAttendeeType1To2((OlMeetingRecipientType) recipient.Type);
-
-                        attendee.RSVP = true;
-                        if (_configuration.ScheduleAgentClient)
-                            attendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
-                        target.Attendees.Add(attendee);
                     }
-                    else
+
+                    target.Attendees.Add(attendee);
+                }
+                else if (!IsOwnIdentity(recipientMailAddressOrNull))
+                {
+                    var attendee = new Attendee();
+
+                    if (!string.IsNullOrEmpty(recipient.Address))
                     {
-                        if ((source.MeetingStatus == OlMeetingStatus.olMeetingReceived || source.MeetingStatus == OlMeetingStatus.olMeetingReceivedAndCanceled) && (!ownAttendeeSet))
+                        var recipientMailUrl = CreateMailUriOrNull(recipientMailAddressOrNull ?? recipient.Address, logger);
+                        if (recipientMailUrl != null)
                         {
-                            var ownAttendee = new Attendee();
-
-                            if (!string.IsNullOrEmpty(recipient.Address))
-                            {
-                                var recipientMailUrl = CreateMailUriOrNull(recipientMailAddressOrNull ?? recipient.Address, logger);
-                                if (recipientMailUrl != null)
-                                {
-                                    ownAttendee.Value = new Uri(recipientMailUrl);
-                                }
-                            }
-
-                            ownAttendee.CommonName = nameWithoutEmail;
-                            ownAttendee.ParticipationStatus = (source.MeetingStatus == OlMeetingStatus.olMeetingReceivedAndCanceled) ? "DECLINED" : MapParticipation1To2(source.ResponseStatus);
-                            ownAttendee.Role = MapAttendeeType1To2((OlMeetingRecipientType) recipient.Type);
-                            if (_configuration.ScheduleAgentClient)
-                                ownAttendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
-                            target.Attendees.Add(ownAttendee);
-                            ownAttendeeSet = true;
+                            attendee.Value = new Uri(recipientMailUrl);
                         }
+                    }
+
+                    attendee.ParticipationStatus = MapParticipation1To2(recipient.MeetingResponseStatus);
+                    attendee.CommonName = nameWithoutEmail;
+                    attendee.Role = MapAttendeeType1To2((OlMeetingRecipientType) recipient.Type);
+
+                    attendee.RSVP = true;
+                    if (_configuration.ScheduleAgentClient)
+                        attendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
+                    target.Attendees.Add(attendee);
+                }
+                else
+                {
+                    if ((source.MeetingStatus == OlMeetingStatus.olMeetingReceived || source.MeetingStatus == OlMeetingStatus.olMeetingReceivedAndCanceled) && (!ownAttendeeSet))
+                    {
+                        var ownAttendee = new Attendee();
+
+                        if (!string.IsNullOrEmpty(recipient.Address))
+                        {
+                            var recipientMailUrl = CreateMailUriOrNull(recipientMailAddressOrNull ?? recipient.Address, logger);
+                            if (recipientMailUrl != null)
+                            {
+                                ownAttendee.Value = new Uri(recipientMailUrl);
+                            }
+                        }
+
+                        ownAttendee.CommonName = nameWithoutEmail;
+                        ownAttendee.ParticipationStatus = (source.MeetingStatus == OlMeetingStatus.olMeetingReceivedAndCanceled) ? "DECLINED" : MapParticipation1To2(source.ResponseStatus);
+                        ownAttendee.Role = MapAttendeeType1To2((OlMeetingRecipientType) recipient.Type);
+                        if (_configuration.ScheduleAgentClient)
+                            ownAttendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
+                        target.Attendees.Add(ownAttendee);
+                        ownAttendeeSet = true;
                     }
                 }
 

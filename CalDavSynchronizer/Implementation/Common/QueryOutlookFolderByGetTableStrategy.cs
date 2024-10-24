@@ -104,12 +104,16 @@ namespace CalDavSynchronizer.Implementation.Common
                     var lastModificationTimeObject = row[LastModificationTimeColumnId];
                     var userModificationTimeObject = row[UserModificationTimeColumnId];
                     DateTime lastModificationTime;
+                    DateTime userModificationTime;
                     if (lastModificationTimeObject != null)
                     {
-                        lastModificationTime = ((DateTime) lastModificationTimeObject);
-                        if (userModificationTimeObject is DateTime userModificationTime && userModificationTime > lastModificationTime)
-                            lastModificationTime = userModificationTime;
-                        lastModificationTime.ToUniversalTime();
+                        lastModificationTime = ((DateTime) lastModificationTimeObject).ToUniversalTime();
+                        if (userModificationTimeObject != null)
+                        {
+                            userModificationTime = ((DateTime)userModificationTimeObject).ToUniversalTime();
+                            if (userModificationTime > lastModificationTime)
+                                lastModificationTime = userModificationTime;
+                        }
                     }
                     else
                     {
