@@ -223,6 +223,12 @@ namespace CalDavSynchronizer.Implementation
             using (AutomaticStopwatch.StartDebug(s_logger))
             {
                 var updatedEntity = await entityModifier(entityToUpdate);
+
+                if (updatedEntity == null)
+                {
+                    return new EntityVersion<WebResourceName, string>(entityId, entityVersion);
+                }
+
                 try
                 {
                     return await _calDavDataAccess.TryUpdateEntity(entityId, entityVersion, SerializeCalendar(updatedEntity));
