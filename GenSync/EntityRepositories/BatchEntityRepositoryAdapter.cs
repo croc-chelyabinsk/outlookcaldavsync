@@ -55,7 +55,8 @@ namespace GenSync.EntityRepositories
                 try
                 {
                     var result = await _inner.Create(job.InitializeEntity, context);
-                    job.NotifyOperationSuceeded(result);
+                    if (result != null)
+                        job.NotifyOperationSuceeded(result);
                 }
                 catch (Exception x)
                 {
