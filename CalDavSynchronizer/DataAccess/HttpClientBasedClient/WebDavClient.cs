@@ -162,6 +162,17 @@ namespace CalDavSynchronizer.DataAccess.HttpClientBasedClient
                         var location = response.Headers.Location;
                         response.Dispose();
                         var effectiveLocation = location.IsAbsoluteUri ? location : new Uri(url, location);
+
+                        // Protocol switched http to https for HSTS
+                        if (response.Headers.Contains("Strict-Transport-Security") && effectiveLocation.Scheme == "http")
+                        {
+                            var newRequestUri = new UriBuilder(effectiveLocation);
+                            newRequestUri.Scheme = "https";
+                            newRequestUri.Port = url.Port;
+
+                            effectiveLocation = newRequestUri.Uri;
+                        }
+
                         return await ExecuteWebDavRequest(effectiveLocation, httpMethod, depth, ifMatch, ifNoneMatch, mediaType, requestBody, headersFromFirstCall ?? response.Headers);
                     }
                     else
