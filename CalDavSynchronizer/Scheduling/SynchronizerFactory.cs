@@ -49,8 +49,6 @@ using CalDavSynchronizer.Synchronization;
 using CalDavSynchronizer.Utilities;
 using DDay.iCal;
 using DDay.iCal.Serialization.iCalendar;
-using DotNetContrib.Net.Http.Hsts.Stores;
-using DotNetContrib.Net.Http.Hsts;
 using GenSync.EntityMapping;
 using GenSync.EntityRelationManagement;
 using GenSync.EntityRepositories;
@@ -309,7 +307,6 @@ namespace CalDavSynchronizer.Scheduling
         {
             IWebProxy proxy = (proxyOptions != null) ? CreateProxy(proxyOptions) : null; 
             
-            var store = new InMemoryHstsStore();
             HttpClientHandler httpClientHandler = new HttpClientHandler();
             HttpClient httpClient = null;
 
@@ -336,7 +333,7 @@ namespace CalDavSynchronizer.Scheduling
                         httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Automatic;
                     }
 
-                    httpClient = new HttpClient(new HstsHandler(store, innerHandler: httpClientHandler));
+                    httpClient = new HttpClient(httpClientHandler);
                     if (forceBasicAuthentication && !string.IsNullOrEmpty(username))
                     {
                         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
@@ -365,7 +362,7 @@ namespace CalDavSynchronizer.Scheduling
                         httpClientHandler.ClientCertificateOptions = ClientCertificateOption.Automatic;
                     }
 
-                    httpClient = new HttpClient(new HstsHandler(store, innerHandler: httpClientHandler));
+                    httpClient = new HttpClient(httpClientHandler);
                     httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + SecureStringUtility.ToUnsecureString(passwordOrToken));
 
                     httpClient.Timeout = calDavConnectTimeout;
