@@ -151,6 +151,7 @@ namespace CalDavSynchronizer.DataAccess.HttpClientBasedClient
                 }
 
                 response = await _httpClient.SendAsync(requestMessage);
+                url = requestMessage.RequestUri;
             }
 
             try

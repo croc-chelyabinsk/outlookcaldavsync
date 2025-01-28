@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CalDavSynchronizer.OAuth.Sw
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wacton.Unicolour", "Unicolour\Wacton.Unicolour.csproj", "{A8F93F45-42EA-4D4C-8DD1-B03410CC7C55}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetContrib.Net.Http.Hsts", "DotNetContrib.Net.Http.Hsts\DotNetContrib.Net.Http.Hsts.csproj", "{F4529E28-9827-4742-82E4-FE890181690F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

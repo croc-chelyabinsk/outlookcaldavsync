@@ -903,6 +903,10 @@
       <Project>{424f803e-b641-4473-b9c3-b8df40e0b3b3}</Project>
       <Name>CalDavSynchronizer.OAuth.Swisscom</Name>
     </ProjectReference>
+	<ProjectReference Include="..\DotNetContrib.Net.Http.Hsts\DotNetContrib.Net.Http.Hsts.csproj">
+      <Project>{f4529e28-9827-4742-82e4-fe890181690f}</Project>
+      <Name>DotNetContrib.Net.Http.Hsts</Name>
+    </ProjectReference>
     <ProjectReference Include="..\GenSync\GenSync.csproj">
       <Project>{76c932e7-eca5-4010-b602-2104327ee5ee}</Project>
       <Name>GenSync</Name>
