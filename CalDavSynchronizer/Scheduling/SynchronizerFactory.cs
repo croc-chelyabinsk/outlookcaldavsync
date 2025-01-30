@@ -305,7 +305,8 @@ namespace CalDavSynchronizer.Scheduling
             bool forceBasicAuthentication,
             bool enableClientCertificate)
         {
-            IWebProxy proxy = (proxyOptions != null) ? CreateProxy(proxyOptions) : null;
+            IWebProxy proxy = (proxyOptions != null) ? CreateProxy(proxyOptions) : null; 
+            
             HttpClientHandler httpClientHandler = new HttpClientHandler();
             HttpClient httpClient = null;
 
