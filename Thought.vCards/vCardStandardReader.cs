@@ -1805,7 +1805,13 @@ namespace Thought.vCards
             // will be missing in some vCards if these components
             // are blank.
 
-            string[] names = property.ToString().Split(';');
+            string[] names = Regex.Split(property.ToString(), @"(?<!\\);") 
+                                  .Where(value => !string.IsNullOrEmpty(value))
+                                  .Select(value => DecodeEscaped(value))
+                                  .ToArray();
+
+            if (names.Length == 0)
+                return;
 
             // The first value is the family (last) name.
             card.FamilyName = names[0];
@@ -2714,7 +2720,9 @@ namespace Thought.vCards
                         break;
 
                     default:
-                        property.Value = DecodeEscaped(rawValue);
+                        property.Value = property.Name == "N" 
+                            ? rawValue
+                            : DecodeEscaped(rawValue);
                         break;
                 }
 
