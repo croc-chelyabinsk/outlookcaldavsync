@@ -97,36 +97,6 @@ namespace CalDavSynchronizer.Implementation.Events
             _outlookMajorVersion = Convert.ToInt32(outlookMajorVersionString);
         }
 
-        private bool CheckOrganizer(IAppointmentItemWrapper sourceWrapper, IEntitySynchronizationLogger logger)
-        {
-            var email = _outlookEmailAddress.Split('@')[0];
-
-            if (string.Equals(email, sourceWrapper.Inner.Organizer.Split('@')[0], StringComparison.InvariantCultureIgnoreCase))
-            {
-                return true;
-            }
-
-            using (var organizerWrapper = GenericComObjectWrapper.Create(OutlookUtility.GetEventOrganizerOrNull(sourceWrapper.Inner, logger, s_logger, _outlookMajorVersion)))
-            {
-                if (organizerWrapper == null)
-                {
-                    return false;
-                }
-
-                if (organizerWrapper.Inner == null)
-                {
-                    return false;
-                }
-
-                if (string.Equals(email, organizerWrapper.Inner.Address.Split('@')[0], StringComparison.InvariantCultureIgnoreCase))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         public async Task<IICalendar> Map1To2(IAppointmentItemWrapper sourceWrapper, IICalendar existingTargetCalender, IEntitySynchronizationLogger logger, IEventSynchronizationContext context)
         {
             var newTargetCalender = new iCalendar();
@@ -134,10 +104,8 @@ namespace CalDavSynchronizer.Implementation.Events
             ITimeZone startIcalTimeZone = null;
             ITimeZone endIcalTimeZone = null;
 
-            if (!CheckOrganizer(sourceWrapper, logger))
-            {
+            if (!string.Equals(_outlookEmailAddress.Split('@')[0], sourceWrapper.Inner.Organizer.Split('@')[0], StringComparison.InvariantCultureIgnoreCase))
                 return null;
-            }
 
             if (!_configuration.CreateEventsInUTC)
             {
