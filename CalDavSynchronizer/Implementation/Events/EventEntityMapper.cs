@@ -104,9 +104,6 @@ namespace CalDavSynchronizer.Implementation.Events
             ITimeZone startIcalTimeZone = null;
             ITimeZone endIcalTimeZone = null;
 
-            if (!string.Equals(_outlookEmailAddress.Split('@')[0], sourceWrapper.Inner.Organizer.Split('@')[0], StringComparison.InvariantCultureIgnoreCase))
-                return null;
-
             if (!_configuration.CreateEventsInUTC)
             {
                 string startTimeZoneID;

@@ -258,9 +258,6 @@ namespace CalDavSynchronizer.Implementation
             {
                 IICalendar newCalendar = new iCalendar();
                 newCalendar = await entityInitializer(newCalendar);
-                if (newCalendar == null)
-                    return null;
-
                 var uid = newCalendar.Events.Count > 0 ? newCalendar.Events[0].UID : newCalendar.Todos[0].UID;
                 const int maximumNameLength = 255;
                 var name = uid.Length <= maximumNameLength ? uid : Guid.NewGuid().ToString();
