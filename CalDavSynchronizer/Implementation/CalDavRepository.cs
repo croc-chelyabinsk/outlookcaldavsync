@@ -223,12 +223,6 @@ namespace CalDavSynchronizer.Implementation
             using (AutomaticStopwatch.StartDebug(s_logger))
             {
                 var updatedEntity = await entityModifier(entityToUpdate);
-
-                if (updatedEntity == null)
-                {
-                    return new EntityVersion<WebResourceName, string>(entityId, entityVersion);
-                }
-
                 try
                 {
                     return await _calDavDataAccess.TryUpdateEntity(entityId, entityVersion, SerializeCalendar(updatedEntity));
@@ -264,9 +258,6 @@ namespace CalDavSynchronizer.Implementation
             {
                 IICalendar newCalendar = new iCalendar();
                 newCalendar = await entityInitializer(newCalendar);
-                if (newCalendar == null)
-                    return null;
-
                 var uid = newCalendar.Events.Count > 0 ? newCalendar.Events[0].UID : newCalendar.Todos[0].UID;
                 const int maximumNameLength = 255;
                 var name = uid.Length <= maximumNameLength ? uid : Guid.NewGuid().ToString();
