@@ -1806,7 +1806,6 @@ namespace Thought.vCards
             // are blank.
 
             string[] names = Regex.Split(property.ToString(), @"(?<!\\);") 
-                                  .Where(value => !string.IsNullOrEmpty(value))
                                   .Select(value => DecodeEscaped(value))
                                   .ToArray();
 
