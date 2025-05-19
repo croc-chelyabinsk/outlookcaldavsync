@@ -271,10 +271,13 @@ namespace CalDavSynchronizer.Implementation.Contacts
             target.Inner.Spouse = source.Spouse;
             target.Inner.ManagerName = source.Manager;
 
-            if (string.IsNullOrEmpty(target.Inner.FullName))
-                target.Inner.FullName = source.FormattedName;
-            if (!_configuration.KeepOutlookFileAs)
-                target.Inner.FileAs = source.FormattedName;
+            if (!string.IsNullOrEmpty(source.FormattedName))
+            {
+                if (string.IsNullOrEmpty(target.Inner.FullName))
+                    target.Inner.FullName = source.FormattedName;
+                if (!_configuration.KeepOutlookFileAs)
+                    target.Inner.FileAs = source.FormattedName;
+            }
 
             if (source.Nicknames.Count > 0)
             {
