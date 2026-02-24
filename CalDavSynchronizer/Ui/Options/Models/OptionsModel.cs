@@ -616,7 +616,8 @@ namespace CalDavSynchronizer.Ui.Options.Models
                 ForceBasicAuthentication,
                 CreateProxyOptions(),
                 _generalOptions.EnableClientCertificate,
-                _generalOptions.AcceptInvalidCharsInServerResponse);
+                _generalOptions.AcceptInvalidCharsInServerResponse,
+                _generalOptions.EnableResponseLog);
         }
 
         public IWebProxy GetProxyIfConfigured()

@@ -235,7 +235,8 @@ namespace CalDavSynchronizer.Scheduling
                 options.ForceBasicAuthentication,
                 options.ProxyOptions,
                 generalOptions.EnableClientCertificate,
-                generalOptions.AcceptInvalidCharsInServerResponse);
+                generalOptions.AcceptInvalidCharsInServerResponse,
+                generalOptions.EnableResponseLog);
         }
 
         public static IWebDavClient CreateWebDavClient(
@@ -249,7 +250,8 @@ namespace CalDavSynchronizer.Scheduling
             bool forceBasicAuthentication,
             ProxyOptions proxyOptions,
             bool enableClientCertificate,
-            bool acceptInvalidChars
+            bool acceptInvalidChars,
+            bool enableResponseLog
         )
         {
             var productAndVersion = GetProductAndVersion();
@@ -263,7 +265,8 @@ namespace CalDavSynchronizer.Scheduling
                         productAndVersion.Item2,
                         closeConnectionAfterEachRequest,
                         acceptInvalidChars,
-                        RequiresEtagsWithoutQuotes(serverUrl));
+                        RequiresEtagsWithoutQuotes(serverUrl),
+                        enableResponseLog);
                 case ServerAdapterType.WebDavHttpClientOAuth:
                     return new DataAccess.HttpClientBasedClient.WebDavClient(
                         () => CreateHttpClient(username, SecureStringUtility.ToSecureString(_authService.GetAccessToken()), serverUrl, timeout, serverAdapterType, proxyOptions, preemptiveAuthentication, forceBasicAuthentication, enableClientCertificate),
@@ -271,7 +274,8 @@ namespace CalDavSynchronizer.Scheduling
                         productAndVersion.Item2,
                         closeConnectionAfterEachRequest,
                         acceptInvalidChars,
-                        RequiresEtagsWithoutQuotes(serverUrl));
+                        RequiresEtagsWithoutQuotes(serverUrl),
+                        enableResponseLog);
 
                 default:
                     throw new ArgumentOutOfRangeException("serverAdapterType");
@@ -595,7 +599,8 @@ namespace CalDavSynchronizer.Scheduling
                         options.ForceBasicAuthentication,
                         options.ProxyOptions,
                         generalOptions.EnableClientCertificate,
-                        generalOptions.AcceptInvalidCharsInServerResponse));
+                        generalOptions.AcceptInvalidCharsInServerResponse,
+                        generalOptions.EnableResponseLog));
             }
 
             componentsToFill.CalDavDataAccess = calDavDataAccess;
@@ -884,7 +889,8 @@ namespace CalDavSynchronizer.Scheduling
                     options.ForceBasicAuthentication,
                     options.ProxyOptions,
                     generalOptions.EnableClientCertificate,
-                    generalOptions.AcceptInvalidCharsInServerResponse);
+                    generalOptions.AcceptInvalidCharsInServerResponse,
+                    generalOptions.EnableResponseLog);
 
                 cardDavDataAccess = new CardDavDataAccess(
                     serverUrl,
