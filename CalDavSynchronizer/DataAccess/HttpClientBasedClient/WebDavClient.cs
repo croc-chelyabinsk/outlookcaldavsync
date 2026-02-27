@@ -127,7 +127,6 @@ namespace CalDavSynchronizer.DataAccess.HttpClientBasedClient
             }
         }
 
-
         private async Task LogResponse(HttpResponseMessage response, Guid guid)
         {
             var logPathFolder = Path.Combine(Path.GetTempPath(), "VKWS", "logs");
@@ -330,7 +329,12 @@ namespace CalDavSynchronizer.DataAccess.HttpClientBasedClient
                     errorLog.AppendLine(e.InnerException.Message.ToString());
                 }
 
-                LogStringBuilder(errorLog, guid);
+                try
+                {
+                    LogStringBuilder(errorLog, guid);
+                } 
+                catch { }
+
                 throw;
             }
         }
