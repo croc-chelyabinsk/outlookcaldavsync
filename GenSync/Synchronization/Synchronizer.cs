@@ -368,7 +368,15 @@ namespace GenSync.Synchronization
                         IReadOnlyDictionary<TBtypeEntityId, TBtypeEntity> bEntitiesById;
                         using (chunkLogger.StartBRepositoryLoad(bEntitesToLoad.Count))
                         {
-                            bEntitiesById = await bEntities.GetEntities(bEntitesToLoad, logger.BLoadEntityLogger, synchronizationContext);
+                            try
+                            {
+                                bEntitiesById = await bEntities.GetEntities(bEntitesToLoad, logger.BLoadEntityLogger, synchronizationContext);
+                            }
+                            catch
+                            {
+                                s_logger.Error($"Failed to receive {currentBatch.Count} entities");
+                                continue;
+                            }
                         }
 
                         currentBatch.ForEach(s => s.FetchRequiredEntities(aEntitiesById, bEntitiesById));
