@@ -166,6 +166,8 @@ namespace CalDavSynchronizer.Scheduling
 
                     progress += step;
                     progressBar?.Report(progress);
+                    
+                    await Task.Delay(TimeSpan.FromMilliseconds(1));
                 }
             }
         }

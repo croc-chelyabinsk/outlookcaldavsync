@@ -248,6 +248,8 @@ namespace CalDavSynchronizer.Scheduling
                             Thread.MemoryBarrier(); // should not be required because there is just one thread entering multiple times
                             await RunPartialNoThrow(itemsToSync);
                         }
+
+                        await Task.Delay(TimeSpan.FromMilliseconds(1));
                     }
                 }
                 finally
