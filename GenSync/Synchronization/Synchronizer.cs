@@ -414,6 +414,10 @@ namespace GenSync.Synchronization
 
                             throw;
                         }
+                        finally
+                        {
+                            await Task.Delay(TimeSpan.FromMilliseconds(1));
+                        }
                     }
                 }
                 finally
