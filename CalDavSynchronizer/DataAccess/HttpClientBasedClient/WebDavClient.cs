@@ -320,21 +320,27 @@ namespace CalDavSynchronizer.DataAccess.HttpClientBasedClient
 
             catch (Exception e)
             {
-                var errorLog = new StringBuilder();
-                errorLog.AppendLine("Get Error:");
-                errorLog.AppendLine(e.Message.ToString());
-
-                if (e.InnerException != null)
+                if (_enableResponseLog)
                 {
-                    errorLog.AppendLine(e.InnerException.Message.ToString());
+                    try
+                    {
+                        var errorLog = new StringBuilder();
+                        errorLog.AppendLine("Get Error:");
+                        errorLog.AppendLine(e.Message);
+
+                        if (e.InnerException != null)
+                        {
+                            errorLog.AppendLine(e.InnerException.Message);
+                        }
+
+                        LogStringBuilder(errorLog, guid);
+                    }
+                    catch
+                    {
+                        // pass
+                    }
                 }
-
-                try
-                {
-                    LogStringBuilder(errorLog, guid);
-                } 
-                catch { }
-
+                    
                 throw;
             }
         }
