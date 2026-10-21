@@ -120,7 +120,8 @@ namespace CalDavSynchronizer
             IComWrapperFactory comWrapperFactory,
             IExceptionHandlingStrategy exceptionHandlingStrategy,
             IUiService uiService = null,
-            string applicationDataDirectoryBaseParam = null
+            string applicationDataDirectoryBaseParam = null,
+            ITrayNotifier trayNotifier = null
         )
         {
             if (application == null) throw new ArgumentNullException(nameof(application));
@@ -223,7 +224,7 @@ namespace CalDavSynchronizer
 
             _reportGarbageCollection = new ReportGarbageCollection(_synchronizationReportRepository, TimeSpan.FromDays(generalOptions.MaxReportAgeInDays));
 
-            _trayNotifier = generalOptions.EnableTrayIcon ? new TrayNotifier(this) : NullTrayNotifer.Instance;
+            _trayNotifier = trayNotifier ?? NullTrayNotifer.Instance;
 
             try
             {
