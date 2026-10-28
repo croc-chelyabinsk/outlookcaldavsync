@@ -9,3 +9,4 @@ packages/*/
 *.exe
 *.msi
 *.ide
+/.idea
