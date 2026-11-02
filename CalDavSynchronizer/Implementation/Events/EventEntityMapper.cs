@@ -197,6 +197,15 @@ namespace CalDavSynchronizer.Implementation.Events
 
             await Map1To2(sourceWrapper.Inner, newTargetEvent, false, startIcalTimeZone, endIcalTimeZone, logger, context);
 
+            if (existingTargetEvent == null && _configuration.OrganizerAsDelegate &&
+                !StringComparer.InvariantCultureIgnoreCase.Equals(_serverEmailUri, $"mailto:{_outlookEmailAddress}") &&
+                (sourceWrapper.Inner.MeetingStatus == OlMeetingStatus.olNonMeeting ||
+                 sourceWrapper.Inner.MeetingStatus == OlMeetingStatus.olMeeting))
+            {
+                foreach (var targetEvent in newTargetCalender.Events)
+                    targetEvent.Organizer = new Organizer(_serverEmailUri);
+            }
+
             for (int i = 0, newSequenceNumber = existingTargetCalender.Events.Count > 0 ? existingTargetCalender.Events.Max(e => e.Sequence) + 1 : 0;
                 i < newTargetCalender.Events.Count;
                 i++, newSequenceNumber++)
@@ -669,14 +678,19 @@ namespace CalDavSynchronizer.Implementation.Events
                     }
 
                     //Добавление организатора участником, так как VK не воспринимает изменение списка участников по CalDAV, если список пуст
-                    var ownAttendee = new Attendee();
+                    var ownAttendee = target.Attendees.FirstOrDefault(attendee => attendee.Value != null &&
+                        StringComparer.InvariantCultureIgnoreCase.Equals(attendee.Value.ToString(), email));
+                    if (ownAttendee == null)
+                    {
+                        ownAttendee = new Attendee();
+                        target.Attendees.Add(ownAttendee);
+                    }
                     ownAttendee.Value = new Uri(email);
                     ownAttendee.CommonName = source.Organizer;
                     ownAttendee.RSVP = true;
                     ownAttendee.ParticipationStatus = (source.MeetingStatus == OlMeetingStatus.olMeetingReceivedAndCanceled) ? "DECLINED" : MapParticipation1To2(source.ResponseStatus);
-                    if (_configuration.ScheduleAgentClient)
+                    if (_configuration.ScheduleAgentClient && !ownAttendee.Parameters.ContainsKey("SCHEDULE-AGENT"))
                         ownAttendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
-                    target.Attendees.Add(ownAttendee);
                     SetOrganizerSchedulingParameters(source, target, logger);
                 }
             }
