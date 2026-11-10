@@ -477,8 +477,7 @@ namespace CalDavSynchronizer.Scheduling
                 mappingParameters,
                 configuredEventTimeZoneOrNull,
                 _outlookSession.TimeZones,
-                new CalendarResourceResolver(calDavDataAccess),
-                options.UserName);
+                new CalendarResourceResolver(calDavDataAccess));
 
             var outlookEventRelationDataFactory = new OutlookEventRelationDataFactory();
 
