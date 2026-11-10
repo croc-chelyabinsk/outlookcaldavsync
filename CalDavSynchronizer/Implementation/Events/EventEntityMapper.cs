@@ -62,7 +62,6 @@ namespace CalDavSynchronizer.Implementation.Events
         private readonly int _outlookMajorVersion;
 
         private readonly string _outlookEmailAddress;
-        private readonly string _delegateEmailUri;
         private readonly string _serverEmailUri;
         private readonly string _localTimeZoneId;
         private readonly ITimeZone _configuredEventTimeZoneOrNull;
@@ -82,16 +81,10 @@ namespace CalDavSynchronizer.Implementation.Events
             EventMappingConfiguration configuration,
             ITimeZone configuredEventTimeZoneOrNull,
             IOutlookTimeZones outlookTimeZones,
-            ICalendarResourceResolver calendarResourceResolver,
-            string serverUserEmailAddress = null)
+            ICalendarResourceResolver calendarResourceResolver)
         {
             _calendarResourceResolver = calendarResourceResolver ?? throw new ArgumentNullException(nameof(calendarResourceResolver));
             _outlookEmailAddress = outlookEmailAddress;
-            var delegateEmailAddress = !string.IsNullOrWhiteSpace(serverUserEmailAddress) &&
-                Regex.IsMatch(serverUserEmailAddress, @"^[^\s@]+@[^\s@]+$") &&
-                Uri.IsWellFormedUriString("mailto:" + serverUserEmailAddress, UriKind.Absolute)
-                ? serverUserEmailAddress : outlookEmailAddress;
-            _delegateEmailUri = CreateMailUriOrNull(delegateEmailAddress, NullEntitySynchronizationLogger.Instance);
             _configuration = configuration;
             _configuredEventTimeZoneOrNull = configuredEventTimeZoneOrNull;
             _outlookTimeZones = outlookTimeZones;
@@ -204,14 +197,6 @@ namespace CalDavSynchronizer.Implementation.Events
 
             await Map1To2(sourceWrapper.Inner, newTargetEvent, false, startIcalTimeZone, endIcalTimeZone, logger, context);
 
-            if (_configuration.OrganizerAsDelegate)
-            {
-                var isNewLocalEvent = existingTargetEvent == null &&
-                    (sourceWrapper.Inner.MeetingStatus == OlMeetingStatus.olNonMeeting ||
-                     sourceWrapper.Inner.MeetingStatus == OlMeetingStatus.olMeeting);
-                MapSharedCalendarOrganizer(newTargetCalender, isNewLocalEvent);
-            }
-
             for (int i = 0, newSequenceNumber = existingTargetCalender.Events.Count > 0 ? existingTargetCalender.Events.Max(e => e.Sequence) + 1 : 0;
                 i < newTargetCalender.Events.Count;
                 i++, newSequenceNumber++)
@@ -220,56 +205,6 @@ namespace CalDavSynchronizer.Implementation.Events
             }
 
             return newTargetCalender;
-        }
-
-        private void MapSharedCalendarOrganizer(IICalendar calendar, bool isNewLocalEvent)
-        {
-            foreach (var targetEvent in calendar.Events)
-            {
-                var mappedOrganizerEmailUri = targetEvent.Organizer?.Value?.ToString();
-                if (isNewLocalEvent && !StringComparer.InvariantCultureIgnoreCase.Equals(
-                    mappedOrganizerEmailUri, _serverEmailUri))
-                {
-                    if (targetEvent.Organizer == null)
-                        targetEvent.Organizer = new Organizer(_serverEmailUri);
-                    else
-                    {
-                        targetEvent.Organizer.Value = new Uri(_serverEmailUri);
-                        targetEvent.Organizer.CommonName = null;
-                    }
-                }
-
-                if (!StringComparer.InvariantCultureIgnoreCase.Equals(
-                    targetEvent.Organizer?.Value?.ToString(), _serverEmailUri) || _delegateEmailUri == null)
-                    continue;
-
-                var isDelegate = !StringComparer.InvariantCultureIgnoreCase.Equals(_serverEmailUri, _delegateEmailUri);
-                targetEvent.Organizer.SentBy = isDelegate ? new Uri(_delegateEmailUri) : null;
-                if (!isNewLocalEvent || !isDelegate || !_configuration.MapAttendees)
-                    continue;
-
-                var attendees = targetEvent.Attendees.Where(a =>
-                    !StringComparer.InvariantCultureIgnoreCase.Equals(a.Value?.ToString(), _serverEmailUri) &&
-                    !(StringComparer.InvariantCultureIgnoreCase.Equals(mappedOrganizerEmailUri, "mailto:" + _outlookEmailAddress) &&
-                      StringComparer.InvariantCultureIgnoreCase.Equals(a.Value?.ToString(), mappedOrganizerEmailUri))).ToArray();
-                targetEvent.Properties.Remove("ATTENDEE");
-                foreach (var attendee in attendees)
-                    targetEvent.Attendees.Add(attendee);
-
-                if (!targetEvent.Attendees.Any(a => StringComparer.InvariantCultureIgnoreCase.Equals(
-                    a.Value?.ToString(), _delegateEmailUri)))
-                {
-                    var delegateAttendee = new Attendee(_delegateEmailUri)
-                    {
-                        ParticipationStatus = "NEEDS-ACTION",
-                        Role = "REQ-PARTICIPANT",
-                        RSVP = true
-                    };
-                    if (_configuration.ScheduleAgentClient)
-                        delegateAttendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
-                    targetEvent.Attendees.Add(delegateAttendee);
-                }
-            }
         }
 
         private async Task Map1To2(AppointmentItem source, IEvent target, bool isRecurrenceException, ITimeZone startIcalTimeZone, ITimeZone endIcalTimeZone, IEntitySynchronizationLogger logger, IEventSynchronizationContext context)
@@ -734,19 +669,14 @@ namespace CalDavSynchronizer.Implementation.Events
                     }
 
                     //Добавление организатора участником, так как VK не воспринимает изменение списка участников по CalDAV, если список пуст
-                    var ownAttendee = target.Attendees.FirstOrDefault(attendee => attendee.Value != null &&
-                        StringComparer.InvariantCultureIgnoreCase.Equals(attendee.Value.ToString(), email));
-                    if (ownAttendee == null)
-                    {
-                        ownAttendee = new Attendee();
-                        target.Attendees.Add(ownAttendee);
-                    }
+                    var ownAttendee = new Attendee();
                     ownAttendee.Value = new Uri(email);
                     ownAttendee.CommonName = source.Organizer;
                     ownAttendee.RSVP = true;
                     ownAttendee.ParticipationStatus = (source.MeetingStatus == OlMeetingStatus.olMeetingReceivedAndCanceled) ? "DECLINED" : MapParticipation1To2(source.ResponseStatus);
-                    if (_configuration.ScheduleAgentClient && !ownAttendee.Parameters.ContainsKey("SCHEDULE-AGENT"))
+                    if (_configuration.ScheduleAgentClient)
                         ownAttendee.Parameters.Add("SCHEDULE-AGENT", "CLIENT");
+                    target.Attendees.Add(ownAttendee);
                     SetOrganizerSchedulingParameters(source, target, logger);
                 }
             }
