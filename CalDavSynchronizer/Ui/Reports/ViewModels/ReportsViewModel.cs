@@ -199,6 +199,11 @@ namespace CalDavSynchronizer.Ui.Reports.ViewModels
 
         public void SelectReportByName(string reportNameAsString)
         {
+            if (_selectedReports == null)
+            {
+                return;
+            }
+
             _selectedReports.Clear();
             _selectedReports.Add(_reports.Single(r => r.ReportName.ToString() == reportNameAsString));
         }
